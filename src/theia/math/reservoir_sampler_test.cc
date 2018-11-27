@@ -1,4 +1,4 @@
-// Copyright (C) 2015 The Regents of the University of California (Regents).
+// Copyright (C) 2018 The Regents of the University of California (Regents).
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,29 +30,39 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 // Please contact the author of this library if you have any questions.
-// Author: Chris Sweeney (cmsweeney@cs.ucsb.edu)
+// Author: Chris Sweeney (sweeney.chris.m@gmail.com)
 
-#ifndef THEIA_IO_READ_MATCHES_H_
-#define THEIA_IO_READ_MATCHES_H_
+#include <glog/logging.h>
+#include <gtest/gtest.h>
+#include <set>
 
-#include <string>
-#include <vector>
-
+#include "theia/math/reservoir_sampler.h"
+#include "theia/util/random.h"
 
 namespace theia {
-struct CameraIntrinsicsPrior;
-struct ImagePairMatch;
 
-// Reads the feature matches between view pairs as well as the two view geometry
-// (i.e., TwoViewInfo) that describes the relative pose between the two
-// views. The names of all views are returned and the image indices in the
-// matches objects corresponds to the index of view_names.
-bool ReadMatchesAndGeometry(
-    const std::string& matches_file,
-    std::vector<std::string>* view_names,
-    std::vector<CameraIntrinsicsPrior>* camera_intrinsics_prior,
-    std::vector<ImagePairMatch>* matches);
+TEST(ReservoirSampler, Sanity) {
+  constexpr int kNumFeatures = 1000000;
+  constexpr int kNumSampledFeatures = 1000;
+  ReservoirSampler<int> reservoir_sampler(kNumSampledFeatures);
+
+  // Add features ranging from 0 to 100. This should yield a random sample which
+  // roughly corresponds to 0,1,....,99.
+  for (int i = 0; i < kNumFeatures; i++) {
+    reservoir_sampler.AddElementToSampler(i % kNumSampledFeatures);
+  }
+
+  RandomNumberGenerator rng;
+  std::set<int> rand_samples;
+  for (int i = 0; i < kNumSampledFeatures; i++) {
+    rand_samples.insert(rng.RandInt(0, kNumSampledFeatures));
+  }
+
+  auto samples = reservoir_sampler.GetAllSamples();
+  std::set<int> sorted_samples(samples.begin(), samples.end());
+  LOG(INFO) << "Num unique reservoir samples: " << sorted_samples.size();
+  LOG(INFO) << "Num unique random samples: " << rand_samples.size();
+
+}
 
 }  // namespace theia
-
-#endif  // THEIA_IO_READ_MATCHES_H_

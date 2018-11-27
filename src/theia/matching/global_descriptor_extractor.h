@@ -30,49 +30,40 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 // Please contact the author of this library if you have any questions.
-// Authors: Victor Fragoso (victor.fragoso@mail.wvu.edu)
-//        : Benjamin Smith (bbsmith1@mix.wvu.edu)
+// Author: Chris Sweeney (sweeney.chris.m@gmail.com)
 
 #ifndef THEIA_MATCHING_GLOBAL_DESCRIPTOR_EXTRACTOR_H_
 #define THEIA_MATCHING_GLOBAL_DESCRIPTOR_EXTRACTOR_H_
 
-#include <vector>
-#include <glog/logging.h>
 #include <Eigen/Core>
+#include <vector>
 
 namespace theia {
-// This class computes a global descriptor for a given image.
-//
-// The use of an extractor should follow the next procedure:
-//
-// 1. After creation, initialize the instance by calling Initialize().
-// 2. Train the extractor by calling Train().
-// 3. Compute the global descriptor by calling Extract().
+
+// Global descriptors provide a summary of an entire image into a single feature
+// descriptor. These descriptors may be formed using training data (e.g., SIFT
+// features) or may be directly computed from the image itself. Global
+// descriptors provide an efficient mechanism for determining the image
+// similarity between two images.
 class GlobalDescriptorExtractor {
  public:
-  GlobalDescriptorExtractor() {}
   virtual ~GlobalDescriptorExtractor() {}
 
-  // Initializes the global descriptor extractor.
-  virtual bool Initialize() = 0;
+  // Add features to the descriptor extractor for training. This method may be
+  // called multiple times to add multiple sets of features (e.g., once per
+  // image) to the global descriptor extractor for training.
+  virtual void AddFeaturesForTraining(
+      const std::vector<Eigen::VectorXf>& features) = 0;
 
-  // Trains the instance. Returns true upon success and false otherwise.
-  // Params:
-  //   training_descriptors  The training local descriptors by using specific
-  //     a TrainingDescriptorType (e.g., vector of Eigens (matrix)).
-  virtual bool Train(
-      const std::vector<Eigen::VectorXf>& training_descriptors) = 0;
+  // Train the global descriptor extracto with the given set of feature
+  // descriptors added with AddFeaturesForTraining. It is assumed that all
+  // descriptors have the same length.
+  virtual bool Train() = 0;
 
-  // Computes the global descriptor from information about the image to
-  // describe. The method returns true upon success and false otherwise.
-  // Params:
-  //   input_information  The input image information.
-  //   global_descriptor  The computed global descriptor.
-  virtual bool Extract(const std::vector<Eigen::VectorXf> input_information,
-                       Eigen::VectorXf* global_descriptor) const = 0;
-
+  // Compute a global image descriptor for the set of input features.
+  virtual Eigen::VectorXf ExtractGlobalDescriptor(
+      const std::vector<Eigen::VectorXf>& features) = 0;
 };
 
 }  // namespace theia
-
 #endif  // THEIA_MATCHING_GLOBAL_DESCRIPTOR_EXTRACTOR_H_
